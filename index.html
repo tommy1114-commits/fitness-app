@@ -688,11 +688,13 @@
     // ==========================================
     // 1. 統一 API 適配層 (支援 GAS 內建環境 與 GitHub Pages 跨域模式)
     // ==========================================
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+
     const API = {
       isGAS: (typeof google !== 'undefined' && google.script && google.script.run),
 
       getGasUrl() {
-        return localStorage.getItem('FITNESS_GAS_URL') || '';
+        return localStorage.getItem('FITNESS_GAS_URL') || DEFAULT_GAS_URL;
       },
 
       setGasUrl(url) {
@@ -1480,6 +1482,12 @@
     }
 
     window.onload = function() {
+      // 支援網址帶有 ?api= 參數自動儲存 (方便手機點擊一次即完成設定)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('api')) {
+        API.setGasUrl(urlParams.get('api'));
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       updateModeBadge();
       switchExerciseMode();
       loadAllData();
