@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Workout Assistant 自主健身教練系統</title>
+  <title>Smart Workout Coach 自主健身教練系統</title>
   <!-- Chart.js 視覺化圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -40,7 +40,7 @@
       min-height: 100vh;
     }
 
-    /* 頂部導航列 (Top Navbar) */
+    /* 頂部導航列 */
     .navbar {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
@@ -112,26 +112,25 @@
     }
     .btn-settings:hover { background: #e2e8f0; }
 
-    /* 主要容器與自適應佈局 (RWD Grid) */
     .main-wrap {
       max-width: 1440px;
       margin: 0 auto;
       padding: 16px;
     }
 
-    /* 手機版頁籤 (在桌機版隱藏) */
+    /* 手機版頁籤導覽列 (桌機版自動隱藏) */
     .mobile-tabs {
       display: flex;
       gap: 6px;
       margin-bottom: 16px;
       padding: 4px;
-      background: rgba(230, 238, 248, 0.8);
+      background: rgba(230, 238, 248, 0.85);
       border-radius: 12px;
     }
     .tab-btn {
       flex: 1;
       padding: 10px 4px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       border: none;
       background: transparent;
@@ -139,6 +138,7 @@
       cursor: pointer;
       color: #64748b;
       transition: .2s ease;
+      text-align: center;
     }
     .tab-btn.active {
       background: white;
@@ -146,7 +146,7 @@
       box-shadow: 0 4px 12px rgba(79, 140, 255, 0.15);
     }
 
-    /* 網格系統：電腦版雙欄，手機版單欄 */
+    /* 網格系統：電腦版雙欄 (左:紀錄/小雞 430px，右:看板/歷史/規則)，手機版單欄切換 */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -159,7 +159,9 @@
         grid-template-columns: 430px 1fr;
         align-items: start;
       }
-      .mobile-pane { display: block !important; }
+      #paneRecord { display: block !important; }
+      .desktop-right-col { display: block !important; }
+      #paneAnalytics, #paneLogs, #paneRules { display: block !important; }
     }
 
     /* 卡片通用樣式 */
@@ -182,7 +184,7 @@
       align-items: center;
     }
 
-    /* 頂部 KPI 卡片 */
+    /* 頂部 4 大 KPI 卡片 */
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -200,7 +202,7 @@
       box-shadow: var(--shadow-sm);
     }
     .kpi-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
-    .kpi-val { font-size: 1.45rem; font-weight: 900; color: #1e293b; margin: 4px 0 2px; }
+    .kpi-val { font-size: 1.35rem; font-weight: 900; color: #1e293b; margin: 4px 0 2px; }
     .kpi-sub { font-size: 0.72rem; color: #64748b; }
 
     /* 圖表區塊 */
@@ -248,6 +250,22 @@
       font-size: 0.76rem;
       font-weight: 800;
     }
+
+    /* 上次訓練紀錄專用橫幅 */
+    .last-workout-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      border-radius: 12px;
+      background: #f0f7ff;
+      border: 1px solid #cce2fe;
+    }
+    .lw-icon { font-size: 1.25rem; }
+    .lw-info { min-width: 0; flex: 1; }
+    .lw-title { font-size: 0.75rem; font-weight: 800; color: #1e40af; }
+    .lw-detail { font-size: 0.82rem; font-weight: 700; color: #334155; margin-top: 2px; }
 
     /* 小雞遊戲卡片 */
     .pet-card {
@@ -314,7 +332,7 @@
     .recovery-btn.done { background: #ecfbf5; border-color: #c8efdf; color: #25745d; }
     .recovery-status { min-height: 17px; margin-top: 6px; text-align: center; color: #278466; font-size: 0.70rem; }
 
-    /* 每日任務與成就 */
+    /* 任務與成就 */
     .mission-title { margin-top: 13px; font-size: 0.80rem; font-weight: 900; color: #43516a; }
     .mission-list { display: grid; gap: 6px; margin-top: 7px; }
     .mission { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.7); border: 1px solid #e3ecf4; font-size: 0.77rem; color: #596980; }
@@ -441,7 +459,7 @@
         </div>
       </div>
       <div class="nav-actions">
-        <span class="mode-badge" id="appModeBadge">載入中...</span>
+        <span class="mode-badge" id="appModeBadge">連線偵測中...</span>
         <button class="btn-settings" onclick="openSettingsModal()">⚙️ 設定 API</button>
       </div>
     </div>
@@ -449,7 +467,7 @@
 
   <div class="main-wrap">
 
-    <!-- 手機版頁籤（桌機版自動展開為雙欄並排） -->
+    <!-- 手機版頁籤（4 個獨立分頁，互不干擾） -->
     <div class="mobile-tabs" id="mobileTabs">
       <button class="tab-btn active" id="tabBtnRecord" onclick="switchMobileTab('record')">🏋️ 今日紀錄</button>
       <button class="tab-btn" id="tabBtnCharts" onclick="switchMobileTab('charts')">📊 數據看板</button>
@@ -460,11 +478,11 @@
     <!-- 主要雙欄 Dashboard 佈局 -->
     <div class="dashboard-grid">
 
-      <!-- 左欄：小雞寵物與動作記錄面板 -->
-      <div class="mobile-pane" id="paneRecord">
+      <!-- 左欄：小雞寵物與動作記錄面板 (手機: 頁籤 1) -->
+      <div id="paneRecord">
         <!-- 健身小雞寵物卡片 -->
         <div class="card pet-card">
-          <div id="gameLoading" style="color:#7b8798; font-size:.82rem; text-align:center; padding:12px;">🐣 小雞正在起床……</div>
+          <div id="gameLoading" style="color:#7b8798; font-size:.82rem; text-align:center; padding:12px;">🐣 小雞正在連線起床……</div>
           <div id="gamePanel" style="display:none;">
             <div class="pet-main">
               <div class="pet-avatar state-egg" id="petAvatar" role="img" aria-label="健身小雞"></div>
@@ -476,11 +494,23 @@
                 <div class="xp-track"><div class="xp-fill" id="petXpFill"></div></div>
               </div>
             </div>
+
+            <!-- 上次訓練紀錄與連續天數專用橫幅 (需求 2) -->
+            <div class="last-workout-banner" id="lastWorkoutBanner">
+              <span class="lw-icon">📅</span>
+              <div class="lw-info">
+                <div class="lw-title">上次訓練回顧</div>
+                <div class="lw-detail" id="lastWorkoutText">計算中...</div>
+              </div>
+            </div>
+
             <div class="pet-stats">
               <div class="pet-stat"><strong id="streakDays">0 天</strong><span>🔥 連續訓練</span></div>
               <div class="pet-stat"><strong id="todaySets">0 組</strong><span>🏋️ 今日完成</span></div>
               <div class="pet-stat"><strong id="weekDays">0 / 3</strong><span>📅 本週天數</span></div>
             </div>
+
+            <!-- 史萊姆 Boss 區 -->
             <div class="boss-box">
               <div class="boss-main">
                 <div class="slime" id="bossSlime" role="img" aria-label="懶惰史萊姆"></div>
@@ -497,6 +527,7 @@
                 </div>
               </div>
             </div>
+
             <div class="recovery-head">
               <span class="recovery-title">連續紀錄保護</span>
               <span class="ticket-badge" id="restTicketBadge">本週休息券：可使用</span>
@@ -508,8 +539,10 @@
               <button class="recovery-btn" id="actionRest" onclick="logRecoveryAction('rest_ticket')">🎫 使用休息券</button>
             </div>
             <div class="recovery-status" id="recoveryStatus"></div>
+
             <div class="mission-title">今日任務</div>
             <div class="mission-list" id="missionList"></div>
+
             <details class="achievement-box">
               <summary>🏆 成就與配件收藏</summary>
               <div class="achievement-list" id="achievementList"></div>
@@ -557,92 +590,101 @@
         </div>
       </div>
 
-      <!-- 右欄：數據分析圖表看板與歷史編修 -->
-      <div class="mobile-pane" id="paneAnalytics">
-        <!-- 頂部 4 大 KPI 統計指標 -->
-        <div class="kpi-row">
-          <div class="kpi-card">
-            <div class="kpi-label">歷史累積總組數</div>
-            <div class="kpi-val" id="kpiTotalSets">-</div>
-            <div class="kpi-sub">持續累積進步中</div>
+      <!-- 右側欄（電腦版容納看板、歷史與規則；手機版分開獨立頁籤） -->
+      <div class="desktop-right-col">
+
+        <!-- 頁籤 2: 數據看板 (純看板，不包含歷史或規則，解決需求 1) -->
+        <div id="paneAnalytics">
+          <!-- 4 大 KPI 統計卡片 -->
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-label">歷史累積總組數</div>
+              <div class="kpi-val" id="kpiTotalSets">-</div>
+              <div class="kpi-sub">持續累積進步中</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">當前連續訓練</div>
+              <div class="kpi-val" id="kpiStreak">-</div>
+              <div class="kpi-sub" id="kpiStreakSub">保持規律習慣</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">上次練習紀錄 (需求 2)</div>
+              <div class="kpi-val" id="kpiLastWorkout">-</div>
+              <div class="kpi-sub" id="kpiLastStreak">回顧練習規律</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Pallof 左右對稱度</div>
+              <div class="kpi-val" id="kpiCoreRatio">-</div>
+              <div class="kpi-sub" id="kpiCoreStatus">核心旋轉均衡</div>
+            </div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-label">當前連續訓練</div>
-            <div class="kpi-val" id="kpiStreak">-</div>
-            <div class="kpi-sub" id="kpiStreakSub">保持規律習慣</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">本週討伐傷害</div>
-            <div class="kpi-val" id="kpiBossDamage">-</div>
-            <div class="kpi-sub" id="kpiBossHpSub">史萊姆 Boss</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Pallof 左右對稱度</div>
-            <div class="kpi-val" id="kpiCoreRatio">-</div>
-            <div class="kpi-sub" id="kpiCoreStatus">核心旋轉均衡</div>
+
+          <!-- 視覺化圖表區 (圓餅圖 + 折線圖) -->
+          <div class="card">
+            <div class="card-title">
+              <span>📊 訓練數據視覺化分析</span>
+              <button onclick="loadAnalyticsData()" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:.8rem; cursor:pointer;">↻ 重新計算</button>
+            </div>
+            <div class="charts-grid">
+              <!-- 圓餅圖：動作模式與肌群配置比例 -->
+              <div>
+                <div style="font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:8px; text-align:center;">
+                  🥧 肌群與動作模式分佈
+                </div>
+                <div class="chart-box">
+                  <canvas id="categoryChart"></canvas>
+                </div>
+              </div>
+
+              <!-- 折線圖：近 14 天每日訓練組數趨勢 -->
+              <div>
+                <div style="font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:8px; text-align:center;">
+                  📈 近 14 天每日訓練組數趨勢
+                </div>
+                <div class="chart-box">
+                  <canvas id="trendChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- 核心左右平衡指示器 -->
+            <div class="balance-box">
+              <div class="balance-labels">
+                <span style="color:#2563eb;">👈 向左拉維持秒數：<span id="balLeftSec">0</span> 秒</span>
+                <span id="balAlertBadge" style="color:#475569; font-weight:800;">對稱度：計算中</span>
+                <span style="color:#0d9488;">👉 向右拉維持秒數：<span id="balRightSec">0</span> 秒</span>
+              </div>
+              <div class="balance-bar-wrap">
+                <div class="balance-bar-left" id="balBarLeft" style="width: 50%;"></div>
+                <div class="balance-bar-right" id="balBarRight" style="width: 50%;"></div>
+              </div>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
+                💡 核心左右抗旋轉若維持秒數差異超過 15%，建議在次日訓練針對較弱側增加 1 組以避免骨盆與核心代償。
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 數據圖表區 (圓餅圖 + 折線圖) -->
-        <div class="card">
-          <div class="card-title">
-            <span>📊 訓練數據視覺化分析</span>
-            <button onclick="loadAnalyticsData()" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:.8rem; cursor:pointer;">↻ 重新計算</button>
-          </div>
-          <div class="charts-grid">
-            <!-- 圓餅圖：動作模式與肌群配置比例 -->
-            <div>
-              <div style="font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:8px; text-align:center;">
-                🥧 肌群與動作模式分佈
-              </div>
-              <div class="chart-box">
-                <canvas id="categoryChart"></canvas>
-              </div>
+        <!-- 頁籤 3: 歷史紀錄編修 (獨立分頁，解決需求 1) -->
+        <div id="paneLogs">
+          <div class="card">
+            <div class="card-title">
+              <span>📋 最近訓練歷史紀錄</span>
+              <button onclick="loadLogs()" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:.8rem; cursor:pointer;">↻ 重新整理</button>
             </div>
-
-            <!-- 折線圖：近 14 天每日訓練組數趨勢 -->
-            <div>
-              <div style="font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:8px; text-align:center;">
-                📈 近 14 天每日訓練組數趨勢
-              </div>
-              <div class="chart-box">
-                <canvas id="trendChart"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <!-- 核心左右平衡指示器 -->
-          <div class="balance-box">
-            <div class="balance-labels">
-              <span style="color:#2563eb;">👈 向左拉維持秒數：<span id="balLeftSec">0</span> 秒</span>
-              <span id="balAlertBadge" style="color:#475569; font-weight:800;">對稱度：計算中</span>
-              <span style="color:#0d9488;">👉 向右拉維持秒數：<span id="balRightSec">0</span> 秒</span>
-            </div>
-            <div class="balance-bar-wrap">
-              <div class="balance-bar-left" id="balBarLeft" style="width: 50%;"></div>
-              <div class="balance-bar-right" id="balBarRight" style="width: 50%;"></div>
-            </div>
-            <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
-              💡 核心左右抗旋轉若維持秒數差異超過 15%，建議在次日訓練針對較弱側增加 1 組以避免骨盆與核心代償。
-            </div>
+            <div id="logsContainer">載入中...</div>
           </div>
         </div>
 
-        <!-- 歷史紀錄編修區塊 -->
-        <div class="card" id="paneLogs">
-          <div class="card-title">
-            <span>📋 最近訓練歷史紀錄</span>
-            <button onclick="loadLogs()" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:.8rem; cursor:pointer;">↻ 重新整理</button>
+        <!-- 頁籤 4: 小雞養成規則 (獨立分頁，解決需求 1) -->
+        <div id="paneRules" style="display:none;">
+          <div class="card">
+            <div class="card-title">🐣 小雞養成規則</div>
+            <div class="rules-intro">內容即時同步自 Google 試算表「小雞養成規則」分頁。</div>
+            <div id="rulesContainer">載入養成規則中...</div>
           </div>
-          <div id="logsContainer">載入中...</div>
         </div>
 
-        <!-- 小雞養成規則區塊 (手機版或電腦版皆可閱覽) -->
-        <div class="card" id="paneRules" style="display:none;">
-          <div class="card-title">🐣 小雞養成規則</div>
-          <div class="rules-intro">內容即時同步自 Google 試算表「小雞養成規則」分頁。</div>
-          <div id="rulesContainer">載入養成規則中...</div>
-        </div>
       </div>
 
     </div>
@@ -668,12 +710,12 @@
     </div>
   </div>
 
-  <!-- 設定 API 彈出視窗 (用於 GitHub Pages 模式) -->
+  <!-- 設定 API 彈出視窗 -->
   <div class="modal" id="settingsModal">
     <div class="modal-content">
       <h3 style="margin-top:0; font-size:1.1rem; color:#1e293b;">⚙️ Google Apps Script Web App 設定</h3>
       <p style="font-size:0.82rem; color:#64748b; line-height:1.5;">
-        如果您將本頁面部署在 <strong>GitHub Pages</strong> 或自訂網域，請在此填入您的 Google Apps Script「發布為網路應用程式 (Web App)」的網址：
+        如果您將本頁面部署在 <strong>GitHub Pages</strong> 或自訂網域，請在此填入您的 Google Apps Script「發布為網路應用程式」的網址：
       </p>
       <label>GAS Web App URL (結尾通常為 /exec)</label>
       <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
@@ -686,178 +728,195 @@
 
   <script>
     // ==========================================
-    // 1. 統一 API 適配層 (支援 GAS 內建環境 與 GitHub Pages 跨域模式)
+    // 1. 統一 API 適配層 (支援 GAS 內建環境 與 GitHub Pages JSONP 穿透)
     // ==========================================
-    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+    const DEFAULT_GAS_URL = ''; // 💡 也可以直接將您的 GAS 網址填在這裡，所有裝置打開就免設定！
 
     const API = {
-      isGAS: (typeof google !== 'undefined' && google.script && google.script.run),
+      // 動態判定是否在 Google Apps Script 容器環境中執行
+      isGAS() {
+        return typeof google !== 'undefined' && typeof google.script !== 'undefined' && typeof google.script.run !== 'undefined';
+      },
+
+      cleanUrl(url) {
+        if (!url) return '';
+        url = url.trim();
+        // 自動去除多餘 query 參數與斜線
+        if (url.includes('?')) url = url.split('?')[0];
+        url = url.replace(/\/+$/, '');
+        return url;
+      },
 
       getGasUrl() {
-        return localStorage.getItem('FITNESS_GAS_URL') || DEFAULT_GAS_URL;
+        const stored = localStorage.getItem('FITNESS_GAS_URL');
+        const raw = stored ? stored : DEFAULT_GAS_URL;
+        return this.cleanUrl(raw);
       },
 
       setGasUrl(url) {
-        localStorage.setItem('FITNESS_GAS_URL', url.trim());
+        localStorage.setItem('FITNESS_GAS_URL', this.cleanUrl(url));
+      },
+
+      // 等待 Google Apps Script 注入客戶端腳本 (最多等 1.2 秒)
+      async ensureReady() {
+        if (this.isGAS()) return true;
+        for (let i = 0; i < 12; i++) {
+          await new Promise(r => setTimeout(r, 100));
+          if (this.isGAS()) return true;
+        }
+        return false;
+      },
+
+      // JSONP 引擎：專門穿透 iPhone Safari 302 跨域跳轉
+      requestGas(action, params = {}) {
+        return new Promise((resolve, reject) => {
+          const baseUrl = this.getGasUrl();
+          if (!baseUrl) return reject(new Error('請點擊右上角「⚙️ 設定 API」輸入您的 Apps Script Web App 網址！'));
+
+          const callbackName = 'gas_cb_' + Math.floor(Math.random() * 1000000);
+          const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error('連線逾時，請確認 Google 試算表權限已設為「所有人」並有發布新版本！'));
+          }, 18000);
+
+          function cleanup() {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+          }
+
+          window[callbackName] = function(data) {
+            cleanup();
+            if (data && data.error) reject(new Error(data.error));
+            else resolve(data);
+          };
+
+          const script = document.createElement('script');
+          const queryParts = ['action=' + encodeURIComponent(action), 'callback=' + callbackName];
+          for (const key in params) {
+            const val = typeof params[key] === 'object' ? JSON.stringify(params[key]) : params[key];
+            queryParts.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+          }
+          const separator = baseUrl.includes('?') ? '&' : '?';
+          script.src = baseUrl + separator + queryParts.join('&');
+          script.onerror = function() {
+            cleanup();
+            reject(new Error('連線失敗，請檢查網址是否正確。'));
+          };
+          document.body.appendChild(script);
+        });
       },
 
       async getGameStatus() {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .getGameStatus();
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('請點擊右上角「⚙️ 設定 API」輸入您的 Apps Script Web App 網址！');
-        const res = await fetch(`${url}?action=getGameStatus`);
-        return await res.json();
+        return await this.requestGas('getGameStatus');
       },
 
       async getAnalytics() {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .getAnalyticsData();
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(`${url}?action=getAnalytics`);
-        return await res.json();
+        return await this.requestGas('getAnalytics');
       },
 
       async getRecentWorkouts() {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .getRecentWorkouts();
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(`${url}?action=getRecentWorkouts`);
-        return await res.json();
+        return await this.requestGas('getRecentWorkouts');
       },
 
       async getChickRules() {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .getChickRules();
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(`${url}?action=getChickRules`);
-        return await res.json();
+        return await this.requestGas('getChickRules');
       },
 
       async saveWorkout(payload) {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .saveWorkoutDetail(payload);
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveWorkout', data: payload })
-        });
-        const json = await res.json();
-        return json.message;
+        const res = await this.requestGas('saveWorkout', { data: payload });
+        return res.message;
       },
 
       async updateWorkout(payload) {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .updateWorkoutRow(payload);
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'updateWorkout', data: payload })
-        });
-        const json = await res.json();
-        return json.message;
+        const res = await this.requestGas('updateWorkout', { data: payload });
+        return res.message;
       },
 
       async deleteWorkout(rowIndex) {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .deleteWorkoutRow(rowIndex);
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'deleteWorkout', rowIndex: rowIndex })
-        });
-        const json = await res.json();
-        return json.message;
+        const res = await this.requestGas('deleteWorkout', { rowIndex: rowIndex });
+        return res.message;
       },
 
       async saveRecovery(type) {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .saveRecoveryAction(type);
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveRecovery', type: type })
-        });
-        return await res.json();
+        return await this.requestGas('saveRecovery', { type: type });
       },
 
       async evaluateAI() {
-        if (this.isGAS) {
+        if (this.isGAS()) {
           return new Promise((resolve, reject) => {
             google.script.run
               .withSuccessHandler(resolve)
-              .withFailureHandler(reject)
+              .withFailureHandler(err => reject(new Error(err && err.message ? err.message : String(err))))
               .evaluateWorkoutWithAI();
           });
         }
-        const url = this.getGasUrl();
-        if (!url) throw new Error('尚未設定 Apps Script 網址');
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'evaluateAI' })
-        });
-        const json = await res.json();
-        return json.result;
+        const res = await this.requestGas('evaluateAI');
+        return res.result;
       }
     };
 
@@ -906,29 +965,34 @@
     };
 
     // ==========================================
-    // 3. UI 互動與切換
+    // 3. 手機版獨立分頁切換 (徹底解決需求 1：歷史與規則不帶看板)
     // ==========================================
     function switchMobileTab(tab) {
       const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop) return; // 桌機版不隱藏
+      if (isDesktop) return;
 
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('paneRecord').style.display = tab === 'record' ? 'block' : 'none';
-      document.getElementById('paneAnalytics').style.display = (tab === 'charts' || tab === 'logs' || tab === 'rules') ? 'block' : 'none';
 
-      document.getElementById('paneLogs').style.display = tab === 'logs' ? 'block' : (isDesktop ? 'block' : 'none');
-      document.getElementById('paneRules').style.display = tab === 'rules' ? 'block' : 'none';
+      // 隱藏所有面板
+      document.getElementById('paneRecord').style.display = 'none';
+      document.getElementById('paneAnalytics').style.display = 'none';
+      document.getElementById('paneLogs').style.display = 'none';
+      document.getElementById('paneRules').style.display = 'none';
 
-      if (tab === 'record') document.getElementById('tabBtnRecord').classList.add('active');
-      if (tab === 'charts') {
+      // 僅顯示選取的獨立面板
+      if (tab === 'record') {
+        document.getElementById('paneRecord').style.display = 'block';
+        document.getElementById('tabBtnRecord').classList.add('active');
+      } else if (tab === 'charts') {
+        document.getElementById('paneAnalytics').style.display = 'block';
         document.getElementById('tabBtnCharts').classList.add('active');
         loadAnalyticsData();
-      }
-      if (tab === 'logs') {
+      } else if (tab === 'logs') {
+        document.getElementById('paneLogs').style.display = 'block';
         document.getElementById('tabBtnLogs').classList.add('active');
         loadLogs();
-      }
-      if (tab === 'rules') {
+      } else if (tab === 'rules') {
+        document.getElementById('paneRules').style.display = 'block';
         document.getElementById('tabBtnRules').classList.add('active');
         loadChickRules();
       }
@@ -1053,16 +1117,10 @@
         const data = await API.getAnalytics();
         if (!data || !data.hasData) return;
 
-        // 更新頂部 KPI
         document.getElementById('kpiTotalSets').innerText = (data.totalSetsAllTime || 0) + ' 組';
 
-        // 渲染肌群圓餅圖 (Doughnut Chart)
         renderCategoryChart(data.categoryDistribution);
-
-        // 渲染每日趨勢折線圖 (Line Chart)
         renderTrendChart(data.dailyTrend);
-
-        // 渲染核心左右平衡
         renderCoreBalance(data.coreBalance);
 
       } catch (err) {
@@ -1081,11 +1139,11 @@
           datasets: [{
             data: catData.data,
             backgroundColor: [
-              '#4f8cff', // 上肢水平推 (藍)
-              '#59cdbf', // 下肢基礎推 (薄荷綠)
-              '#8b5cf6', // 上肢垂直拉 (紫)
-              '#f3b55b', // 核心抗伸展 (琥珀橘)
-              '#ef6b73', // 核心抗旋轉 (珊瑚紅)
+              '#4f8cff', // 上肢水平推
+              '#59cdbf', // 下肢基礎推
+              '#8b5cf6', // 上肢垂直拉
+              '#f3b55b', // 核心抗伸展
+              '#ef6b73', // 核心抗旋轉
               '#94a3b8'  // 其他
             ],
             borderWidth: 2,
@@ -1209,14 +1267,17 @@
     }
 
     // ==========================================
-    // 5. 健身小雞遊戲狀態
+    // 5. 健身小雞遊戲狀態與上次訓練計算 (解決需求 2)
     // ==========================================
     async function loadGameStatus() {
       try {
         const game = await API.getGameStatus();
         renderGameStatus(game);
       } catch (err) {
-        document.getElementById('gameLoading').innerText = '狀態讀取失敗：' + err.message;
+        document.getElementById('gameLoading').innerHTML = `
+          狀態讀取失敗：${err.message}<br>
+          <button onclick="loadGameStatus()" style="margin-top:8px; padding:4px 10px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; font-size:.75rem;">↻ 點此重試</button>
+        `;
         console.error(err);
       }
     }
@@ -1239,6 +1300,15 @@
       document.getElementById('todaySets').innerText = `${game.todaySets} 組`;
       document.getElementById('weekDays').innerText = `${game.weekDays} / 3`;
 
+      // 上次訓練紀錄與連續天數 (需求 2)
+      if (game.lastWorkout) {
+        const lw = game.lastWorkout;
+        const textStr = `最後訓練：${lw.text} ｜ 當時連續：${lw.streak} 天 (歷史最高 ${lw.longestStreak} 天)`;
+        document.getElementById('lastWorkoutText').innerText = textStr;
+        document.getElementById('kpiLastWorkout').innerText = lw.text;
+        document.getElementById('kpiLastStreak').innerText = `當時連續 ${lw.streak} 天 · 最佳 ${lw.longestStreak} 天`;
+      }
+
       // 更新 KPI
       document.getElementById('kpiStreak').innerText = `${game.streak} 天`;
 
@@ -1249,9 +1319,6 @@
       document.getElementById('bossDamage').innerText = boss.defeated ? '本週挑戰完成！' : `已造成 ${boss.damage} 點傷害`;
       document.getElementById('bossSets').innerText = `${boss.completedSets} / ${boss.targetSets} 組`;
       document.getElementById('bossSlime').classList.toggle('defeated', boss.defeated);
-
-      document.getElementById('kpiBossDamage').innerText = `${boss.damage} HP`;
-      document.getElementById('kpiBossHpSub').innerText = boss.defeated ? '本週已順利擊倒！' : `剩餘 ${boss.remainingHp} HP`;
 
       const recovery = game.recovery;
       document.getElementById('restTicketBadge').innerText = recovery.restTicketUsed ? '本週休息券：已使用' : '本週休息券：可使用';
@@ -1299,7 +1366,7 @@
     }
 
     // ==========================================
-    // 6. 紀錄清單與編輯
+    // 6. 紀錄清單與編輯 (獨立分頁)
     // ==========================================
     let currentLogsData = [];
     async function loadLogs() {
@@ -1395,7 +1462,7 @@
     }
 
     // ==========================================
-    // 8. 養成規則
+    // 8. 養成規則 (獨立分頁)
     // ==========================================
     async function loadChickRules() {
       const container = document.getElementById('rulesContainer');
@@ -1456,7 +1523,7 @@
 
     function updateModeBadge() {
       const badge = document.getElementById('appModeBadge');
-      if (API.isGAS) {
+      if (API.isGAS()) {
         badge.innerText = '🟢 Google Sheet 內建模式';
         badge.className = 'mode-badge';
       } else {
@@ -1481,21 +1548,27 @@
       loadLogs();
     }
 
-    window.onload = function() {
-      // 支援網址帶有 ?api= 參數自動儲存 (方便手機點擊一次即完成設定)
+    window.onload = async function() {
+      // 支援網址帶有 ?api= 參數自動儲存
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('api')) {
         API.setGasUrl(urlParams.get('api'));
         window.history.replaceState({}, document.title, window.location.pathname);
       }
+
+      // 等待 Apps Script 環境就緒 (若在 Google 內建網址下開啟)
+      await API.ensureReady();
+
       updateModeBadge();
       switchExerciseMode();
       loadAllData();
+
       window.addEventListener('resize', () => {
         if (window.innerWidth >= 1024) {
           document.getElementById('paneRecord').style.display = 'block';
           document.getElementById('paneAnalytics').style.display = 'block';
           document.getElementById('paneLogs').style.display = 'block';
+          document.getElementById('paneRules').style.display = 'none';
         }
       });
     };
