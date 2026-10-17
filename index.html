@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Smart Workout Coach 自主健身教練系統</title>
   <!-- Chart.js 視覺化圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -445,6 +445,29 @@
     .modal { display: none; position: fixed; inset: 0; background: rgba(31,42,68,.4); align-items: center; justify-content: center; padding: 16px; z-index: 999; backdrop-filter: blur(4px); }
     .modal-content { background: white; padding: 22px; border-radius: 18px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
   </style>
+  <style id="anti-zoom-patch">
+    html, body {
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+    }
+    button, a, input, select, textarea, label, [role="button"] {
+      touch-action: manipulation;
+    }
+    @media screen and (max-width: 768px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+  </style>
+  <script>
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+      lastTouchEnd = now;
+    }, { passive: false });
+  </script>
 </head>
 <body>
 
